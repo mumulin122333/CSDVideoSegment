@@ -151,17 +151,6 @@ CSDVideoSegment/
 │   └── <CASE_ID>_phase_query.json
 │
 ├── results/
-│   └── <CASE_ID>/
-│       ├── clarity.csv
-│       ├── clarity_filtered.txt
-│       ├── need_vote.csv
-│       ├── need_list.txt
-│       ├── run_csv_need/
-│       └── vlm/
-│           └── <VLM_MODEL_NAME>/
-│               └── <CASE_ID>_phase_query.jsonl
-│
-├── results/
 │   └── <VLM_MODEL_NAME>/
 │       └── <CASE_ID>_phase_query.csv   # FINAL OUTPUT
 │
