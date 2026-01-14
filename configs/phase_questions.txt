@@ -1,0 +1,32 @@
+Which procedural phase is shown in this image?
+Please answer with only ONE of the following four categories:
+- Diagnosis
+- Local injection
+- Incision / Dissection
+- Hemostasis
+Do not output anything else.
+---
+How many polyps are in the image?
+---
+How many abnormalities are present?
+---
+What type of polyp or lesion is present?
+---
+What color is the abnormality?
+---
+Where is the abnormality located?
+---
+How many instruments are in the image?
+---
+What instrument is being used in this image?
+---
+Are there any anatomical landmarks visible in the image?
+---
+Is there any visible non-clinical text overlay in the image (such as mode labels, numbers, or abbreviations in the corner)?
+If present, transcribe it exactly. If none is visible, answer "None".
+---
+Based on visual inspection only, what is the appearance of the instrument sheath in this image?
+Answer with ONLY ONE:
+- All white
+- White with blue markings
+- No instrument visible

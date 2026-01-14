@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Conda / venv
+.env
+.venv
+conda-env/
+
+# Runtime outputs
+.work/
+results/
+reports/
+
+# Generated data
+data/frames/
+data/**/*.png
+data/**/*.jpg
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
