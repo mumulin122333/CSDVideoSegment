@@ -158,8 +158,7 @@ CSDVideoSegment/
 └── utils/
 ```
 
-All other generated directories (frames, intermediate CSVs, JSON, logs)
-are internal and can be ignored.
+All other generated directories (frames, intermediate CSVs, JSON, logs) can be ignored.
 
 ---
 
