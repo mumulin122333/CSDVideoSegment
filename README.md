@@ -144,11 +144,9 @@ CSDVideoSegment/
 │   │       ├── *.MP4
 │   │       └── ...
 │   │
-│   ├── frames/
-│   │   └── <CASE_ID>/
-│   │       └── *.png
-│   │
-│   └── <CASE_ID>_phase_query.json
+│   └── frames/
+│       └── <CASE_ID>/
+│           └── *.png
 │
 ├── results/
 │   └── <VLM_MODEL_NAME>/
@@ -170,3 +168,5 @@ are internal and can be ignored.
 - Model weights are automatically downloaded to the Hugging Face cache.
 - Intermediate files are required internally but not meant for manual inspection.
 - The pipeline is case-centric and supports multi-video cases.
+- **FPS** controls frame sampling during video decoding
+- **MIN_DURATION** defines the minimum temporal length (in seconds) for a valid phase segment in the final output.
