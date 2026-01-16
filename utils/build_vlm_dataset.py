@@ -4,20 +4,33 @@
 import os
 import json
 import argparse
+from pathlib import Path
 from tqdm import tqdm
 
-from utils.load_questions import load_questions
+
+def load_question_schema(path: str) -> list[dict]:
+    """
+    Load question schema JSON.
+
+    Expected format:
+    [
+      { "question": "...", "field": "phase" },
+      ...
+    ]
+    """
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 
 def main(
     input_list,
     output_json,
-    question_file,
+    question_schema,
 ):
     # --------------------------------------------------
-    # Load questions
+    # Load question schema (canonical source)
     # --------------------------------------------------
-    questions = load_questions(question_file)
+    schema = load_question_schema(question_schema)
 
     # --------------------------------------------------
     # Load image list
@@ -27,14 +40,17 @@ def main(
 
     data = []
 
-    for img in tqdm(images, desc="Building QA"):
+    for img in tqdm(images, desc="Building flat QA"):
         img = os.path.abspath(img)
-        for q in questions:
+
+        for item in schema:
+            question_text = item["question"]
+
             data.append(
                 {
-                    "instruction": q,
+                    "instruction": question_text,
                     "input": "<image>",
-                    "output": "",
+                    "output": "",      # inference 時填
                     "images": [img],
                 }
             )
@@ -44,18 +60,18 @@ def main(
     with open(output_json, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
-    print(f"✅ Saved QA JSON: {output_json} ({len(data)} entries)")
+    print(f"✅ Saved flat QA JSON: {output_json} ({len(data)} entries)")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--input-list", required=True)
     parser.add_argument("--output-json", required=True)
-    parser.add_argument("--question-file", required=True)
+    parser.add_argument("--question-schema", required=True)
     args = parser.parse_args()
 
     main(
         input_list=args.input_list,
         output_json=args.output_json,
-        question_file=args.question_file,
+        question_schema=args.question_schema,
     )

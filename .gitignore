@@ -18,6 +18,9 @@ reports/
 data/frames/
 data/**/*.png
 data/**/*.jpg
+data/**/*.MP4
+data/**/*.mp4
+data/**/*.avi
 
 # Logs
 *.log

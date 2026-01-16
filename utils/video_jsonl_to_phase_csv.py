@@ -10,6 +10,8 @@ from typing import Dict, Any
 
 import pandas as pd
 
+from utils.prompt_schema import load_prompt_schema, extract_attrs_from_prompt
+
 # =========================
 # Utils
 # =========================
@@ -36,22 +38,14 @@ def parse_filename(fname: str):
     """
     Expected filename example:
     03042025105638_00000000U0429638__MOVIE__M_03042025105638_00000000U0429638_1_001-1__frame_000050.png
-
-    Returns:
-        case_id
-        video_id
-        frame_no
     """
     base = Path(fname).name
 
-    # frame number
     m = re.search(r"frame_(\d+)", base)
     frame_no = int(m.group(1)) if m else None
 
-    # case_id = 前綴第一段
     case_id = base.split("__")[0]
 
-    # video_id = MOVIE 之後那一段
     m = re.search(r"__MOVIE__(.+?)__frame_", base)
     video_id = m.group(1) if m else case_id
 
@@ -68,10 +62,10 @@ def hhmmss(sec: float) -> str:
     return f"{h:02d}:{m:02d}:{s:02d}"
 
 # =========================
-# Step 1: JSONL → frame table
+# Step 1: JSONL → frame table (schema-driven)
 # =========================
 
-def jsonl_to_frame_df(jsonl_path: Path) -> pd.DataFrame:
+def jsonl_to_frame_df(jsonl_path: Path, schema) -> pd.DataFrame:
     rows: Dict[str, Dict[str, Any]] = defaultdict(dict)
 
     with open(jsonl_path, "r", encoding="utf-8") as f:
@@ -82,30 +76,24 @@ def jsonl_to_frame_df(jsonl_path: Path) -> pd.DataFrame:
             if not fname:
                 continue
 
-            prompt = obj.get("prompt", "").lower()
+            prompt = obj.get("prompt", "")
             pred = clean_predict(obj.get("predict", ""))
 
-            if "procedural phase" in prompt:
-                rows[fname]["phase"] = pred
-            elif "how many instruments" in prompt:
-                rows[fname]["num_instruments"] = pred
-            elif "how many polyps" in prompt:
-                rows[fname]["num_polyps"] = pred
-            elif "what color" in prompt:
-                rows[fname]["color"] = pred
-            # elif "where is" in prompt:
-            #     rows[fname]["location"] = pred
-            elif "text overlay" in prompt or "non-clinical text" in prompt:
-                rows[fname]["overlay_text"] = pred
-            elif "appearance of the instrument sheath" in prompt:
-                rows[fname]["instrument_sheath"] = pred.lower()
+            attrs = extract_attrs_from_prompt(
+                prompt=prompt,
+                prediction=pred,
+                schema=schema,
+            )
+            if not attrs:
+                continue  # 沒問到 → 忽略
 
+            rows[fname].update(attrs)
 
     data = []
     for fname, attrs in rows.items():
         case_id, video_id, frame_no = parse_filename(fname)
         if frame_no is None or "phase" not in attrs:
-            continue
+            continue  # video pipeline：phase 是 mandatory
 
         data.append({
             "filename": fname,
@@ -116,6 +104,9 @@ def jsonl_to_frame_df(jsonl_path: Path) -> pd.DataFrame:
         })
 
     df = pd.DataFrame(data)
+    if df.empty:
+        return df
+
     df = df.sort_values(["case_id", "video_id", "frame_no"])
     df["frame_no"] = df["frame_no"].astype(int)
     return df
@@ -146,7 +137,6 @@ def build_phase_segments(df: pd.DataFrame):
                 }
                 continue
 
-            # ⭐ 核心邏輯：只看 phase
             if p == cur["phase"]:
                 cur["end_frame"] = f
                 cur["frames"].append(r)
@@ -183,7 +173,6 @@ def aggregate_segments(segments, fps, min_duration):
 
         frames = seg["frames"]
 
-        # === 基本欄位（一定有）===
         row = {
             "case_id": seg["case_id"],
             "video_id": seg["video_id"],
@@ -195,13 +184,10 @@ def aggregate_segments(segments, fps, min_duration):
             "duration_s": round(duration, 2),
         }
 
-        # === 動態欄位：只處理實際出現過的 ===
-        # 收集這個 segment 出現過的所有 key
         appeared_keys = set()
         for f in frames:
             appeared_keys.update(f.keys())
 
-        # 不要處理這些固定欄位
         skip_keys = {
             "filename", "case_id", "video_id", "frame_no", "phase"
         }
@@ -214,29 +200,19 @@ def aggregate_segments(segments, fps, min_duration):
             if v not in ("", None):
                 row[k] = v
 
-        # =========================
-        # Deterministic Hemostasis rule
-        # yellow + instrument + RDI overlay
-        # =========================
+        # -------------------------
+        # Deterministic Hemostasis
+        # -------------------------
+        color = str(row.get("color", "")).lower().strip()
 
-        # normalize color
-        color = row.get("color", "")
-        color = color.lower().strip()
-
-        # normalize num_instruments
-        num_instr = row.get("num_instruments", 0)
         try:
-            num_instr = int(num_instr)
+            num_instr = int(row.get("num_instruments", 0))
         except (TypeError, ValueError):
             num_instr = 0
 
-        # normalize overlay text
-        overlay = row.get("overlay_text", "")
-        overlay = str(overlay).upper().strip()
-
+        overlay = str(row.get("overlay_text", "")).upper().strip()
         is_rdi = overlay.startswith("RDI")
 
-        # strict AND rule
         if (
             row["phase"] != "Diagnosis"
             and color == "yellow"
@@ -245,33 +221,26 @@ def aggregate_segments(segments, fps, min_duration):
         ):
             row["phase"] = "Hemostasis"
 
-        # =========================
-        # Deterministic Local injection rule
-        # overlay none + instrument sheath present (not knife-type)
-        # =========================
-
-        overlay = row.get("overlay_text", "")
-        overlay = str(overlay).lower().strip()
-
-        sheath = row.get("instrument_sheath", "")
-        sheath = str(sheath).lower().strip()
+        # -------------------------
+        # Deterministic Local injection
+        # -------------------------
+        overlay = str(row.get("overlay_text", "")).lower().strip()
+        sheath  = str(row.get("instrument_sheath", "")).lower().strip()
 
         if (
             row["phase"] not in ("Diagnosis", "Hemostasis")
-            and overlay in ("none", "")
+            and overlay in ("", "none")
             and sheath not in (
+                "",
                 "no instrument visible",
-                "white with blue markings",
-                ""
+                "white with blue markings"
             )
         ):
             row["phase"] = "Local injection"
 
-
         out.append(row)
 
     return pd.DataFrame(out)
-
 
 # =========================
 # Main
@@ -285,7 +254,11 @@ def main():
     ap.add_argument("--min-duration", type=float, default=10.0)
     args = ap.parse_args()
 
-    df_frames = jsonl_to_frame_df(Path(args.jsonl))
+    schema = load_prompt_schema(
+        Path("/mnt/1248/open2/mumulin/endoscopy_dataset/CSDVideoSegment/configs/video_phase_questions.json")
+    )
+
+    df_frames = jsonl_to_frame_df(Path(args.jsonl), schema)
     if df_frames.empty:
         print("❌ No valid frames parsed.")
         return

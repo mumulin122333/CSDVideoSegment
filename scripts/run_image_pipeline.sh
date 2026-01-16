@@ -17,17 +17,6 @@ CONFIGS_DIR="$ROOT_DIR/configs"
 VLM_MODEL="Mumulin/Qwen3-VL-4B-Instruct-NTUH"
 VLM_TAG="$(basename "$VLM_MODEL")"
 
-FPS=1
-MIN_DURATION=2
-
-############################################
-# Load cases
-############################################
-
-CASES_FILE="$CONFIGS_DIR/cases.txt"
-mapfile -t CASES < <(grep -v '^\s*#' "$CASES_FILE" | sed '/^\s*$/d')
-echo "📄 Loaded ${#CASES[@]} cases"
-
 ############################################
 # HF repos
 ############################################
@@ -44,29 +33,40 @@ NEED_REPOS=(
 # Paths
 ############################################
 
-FRAMES_ROOT="$ROOT_DIR/data/frames"
+INPUT_ROOT="$ROOT_DIR/data/images"  
 OUTPUTS_ROOT="$ROOT_DIR/.work"
 RESULTS_ROOT="$ROOT_DIR/results"
 
 ############################################
-# Extract frames
+# Process all folders in input root
 ############################################
 
-EXTRACT_CASES="$(IFS=,; echo "${CASES[*]}")"
-HWACCEL=cuda python -m utils.extract_frames \
-  --cases "$EXTRACT_CASES" \
-  --fps "$FPS"
+echo "📄 Processing all folders in $INPUT_ROOT"
+
+# Get all directories in INPUT_ROOT
+INPUT_DIRS=()
+while IFS= read -r -d '' dir; do
+    INPUT_DIRS+=("$dir")
+done < <(find "$INPUT_ROOT" -mindepth 1 -maxdepth 1 -type d -print0)
+
+if [ ${#INPUT_DIRS[@]} -eq 0 ]; then
+    echo "❌ No directories found in $INPUT_ROOT"
+    exit 1
+fi
+
+echo "📄 Found ${#INPUT_DIRS[@]} directories"
 
 ############################################
-# Loop cases
+# Loop directories
 ############################################
 
-for CASE_ID in "${CASES[@]}"; do
+for INPUT_DIR in "${INPUT_DIRS[@]}"; do
   CASE_START_TIME=$(date +%s)
 
-  echo "▶️ CASE: $CASE_ID"
+  # Extract directory name as case ID
+  CASE_ID=$(basename "$INPUT_DIR")
+  echo "▶️ PROCESSING: $CASE_ID"
 
-  INPUT_DIR="$FRAMES_ROOT/$CASE_ID"
   WORK_DIR="$OUTPUTS_ROOT/$CASE_ID"
   CSV_RUN_NEED="$WORK_DIR/run_csv_need"
 
@@ -147,7 +147,7 @@ PY
   python -m utils.build_vlm_dataset \
     --input-list "$NEED_LIST" \
     --output-json "$QA_JSON" \
-    --question-file "$CONFIGS_DIR/phase_questions.txt"
+    --question-schema "$CONFIGS_DIR/image_phase_questions.json"
 
   ##########################################
   # E) VLM inference
@@ -168,11 +168,9 @@ PY
   OUT_CSV="$RESULTS_ROOT/$VLM_TAG/${CASE_ID}_phase_query.csv"
   mkdir -p "$(dirname "$OUT_CSV")"
 
-  python -m utils.jsonl_to_phase_csv \
+  python -m utils.image_jsonl_to_phase_csv \
     --jsonl "$VLM_JSONL" \
     --out-csv "$OUT_CSV" \
-    --fps "$FPS" \
-    --min-duration "$MIN_DURATION"
 
   echo "✅ Final: $OUT_CSV"
   CASE_END_TIME=$(date +%s)
