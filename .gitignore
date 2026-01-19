@@ -1,0 +1,53 @@
+############################
+# Results / Outputs
+############################
+results/
+outputs/
+reports/
+logs/
+
+############################
+# Videos (ALL videos, anywhere)
+############################
+*.mp4
+*.MP4
+*.avi
+*.AVI
+*.mov
+*.MOV
+*.mkv
+*.MKV
+*.webm
+*.WEBM
+
+############################
+# Raw / large data folders
+############################
+data/
+frames/
+frames_raw/
+videos/
+raw_data/
+
+############################
+# Model weights / checkpoints
+############################
+checkpoints/
+weights/
+*.pth
+*.pt
+*.ckpt
+*.safetensors
+
+############################
+# Python cache
+############################
+__pycache__/
+*.pyc
+
+############################
+# Env / misc
+############################
+.env
+.env.*
+.DS_Store
