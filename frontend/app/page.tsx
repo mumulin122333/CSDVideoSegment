@@ -28,7 +28,10 @@ import {
   Home,
   History,
   RotateCcw,
-  Undo2
+  Undo2,
+  Combine,
+  Trash2,
+  Scissors
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -77,8 +80,12 @@ const PHASE_COLORS: Record<string, string> = {
   "Suturing": "bg-amber-500/20 text-amber-400 border-amber-500/30",
   "Cleaning": "bg-indigo-500/20 text-indigo-400 border-indigo-500/30",
   "Local injection": "bg-purple-500/20 text-purple-400 border-purple-500/30",
+  "Hemostasis": "bg-rose-600/20 text-rose-300 border-rose-500/30",
+  "Incision / Dissection": "bg-orange-500/20 text-orange-400 border-orange-500/30",
   "default": "bg-zinc-500/20 text-zinc-400 border-zinc-500/30"
 };
+
+const PRESET_PHASES = ["Diagnosis", "Local injection", "Hemostasis", "Incision / Dissection"];
 
 const getPhaseColor = (phase: string) => {
   // Preserve original core brand colors
@@ -125,7 +132,8 @@ export default function ProVideoDashboard() {
   const [selectedPhaseFilter, setSelectedPhaseFilter] = useState<string | null>(null);
   const [showEditedOnly, setShowEditedOnly] = useState(false);
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
-  const [editValues, setEditValues] = useState<{ start: number, end: number, duration: number }>({ start: 0, end: 0, duration: 0 });
+  const [segmentsBackup, setSegmentsBackup] = useState<Segment[] | null>(null);
+  const [editValues, setEditValues] = useState<{ start: number, end: number, duration: number, phase: string }>({ start: 0, end: 0, duration: 0, phase: "" });
   const [showImport, setShowImport] = useState(true);
 
   // Load history from localStorage
@@ -188,6 +196,95 @@ export default function ProVideoDashboard() {
     setSegments(prev);
     setHistory(prevStack => prevStack.slice(0, -1));
     toast.info("Undo: Reverted to previous state");
+  };
+
+  const updatePhase = (idx: number, newPhase: string) => {
+    const newSegments = [...segments];
+    newSegments[idx].phase = newPhase;
+    setSegments(newSegments);
+  };
+
+  const deleteSegment = (idx: number) => {
+    pushHistory();
+    const newSegments = segments.filter((_, i) => i !== idx);
+    setSegments(newSegments);
+    setEditingIdx(null);
+    toast.error("Segment deleted");
+  };
+
+  const splitSegment = (idx: number) => {
+    const newSegments = [...segments];
+    const seg = newSegments[idx];
+    const startS = timeToSeconds(seg.start_time);
+    const endS = timeToSeconds(seg.end_time);
+
+    // Safety: minimum 2 seconds to split
+    if (endS - startS < 2) {
+      toast.error("Segment too short to split (min 2s)");
+      return;
+    }
+
+    const midS = Math.floor((startS + endS) / 2);
+
+    const firstSeg = {
+      ...seg,
+      end_time: secondsToTime(midS),
+      duration: midS - startS
+    };
+
+    const secondSeg = {
+      ...seg,
+      start_time: secondsToTime(midS),
+      duration: endS - midS
+    };
+
+    newSegments.splice(idx, 1, firstSeg, secondSeg);
+    setSegments(newSegments);
+    toast.success("Segment split into two");
+  };
+
+  const mergeWithNext = (idx: number) => {
+    if (idx >= segments.length - 1) return;
+    const curr = segments[idx];
+    const next = segments[idx + 1];
+    if (curr.video_id !== next.video_id) {
+      toast.warning("Cannot merge segments from different videos");
+      return;
+    }
+    pushHistory();
+    const merged: Segment = {
+      ...curr,
+      end_time: next.end_time,
+      duration: timeToSeconds(next.end_time) - timeToSeconds(curr.start_time),
+      orig_start_time: curr.orig_start_time,
+      orig_end_time: next.orig_end_time
+    };
+    const newSegments = [...segments];
+    newSegments.splice(idx, 2, merged);
+    setSegments(newSegments);
+    setEditingIdx(null);
+    toast.success("Segments merged");
+  };
+
+  const insertAfter = (idx: number) => {
+    pushHistory();
+    const target = segments[idx];
+    const newStart = timeToSeconds(target.end_time);
+    const newEnd = newStart + 10; // Default 10s
+    const newSeg: Segment = {
+      ...target,
+      phase: "New Phase",
+      start_time: secondsToTime(newStart),
+      end_time: secondsToTime(newEnd),
+      orig_start_time: secondsToTime(newStart),
+      orig_end_time: secondsToTime(newEnd),
+      duration: 10
+    };
+    const newSegments = [...segments];
+    newSegments.splice(idx + 1, 0, newSeg);
+    setSegments(newSegments);
+    setEditingIdx(idx + 1);
+    toast.success("New segment inserted");
   };
   const [collapsedVideos, setCollapsedVideos] = useState<Record<string, boolean>>({});
 
@@ -309,9 +406,9 @@ export default function ProVideoDashboard() {
       }));
 
       // SYNC VALIDATION: Check for missing videos
-      const videoMappings = response.data.video_mappings || {};
+      const videoMappings = (response.data.video_mappings || {}) as Record<string, any>;
       const missingVideos = Array.from(new Set(loadedSegments.map((s: any) => s.video_id)))
-        .filter(vidId => !videoMappings[vidId]);
+        .filter((vidId: any) => !videoMappings[vidId]);
 
       if (missingVideos.length > 0) {
         toast.warning(`Synchronization Alert: Missing ${missingVideos.length} video files in folder.`, {
@@ -360,16 +457,42 @@ export default function ProVideoDashboard() {
     }
   };
 
+  const handleSelectSegment = (seg: Segment) => {
+    const idx = segments.indexOf(seg);
+    // Transactional Rollback: if editing another segment, restore backup
+    if (editingIdx !== null && editingIdx !== idx && segmentsBackup) {
+      setSegments(segmentsBackup);
+      setSegmentsBackup(null);
+      setEditingIdx(null);
+      toast.info("Unsaved changes discarded");
+    }
+
+    setCurrentSegment(seg);
+    if (videoRef.current) {
+      if (seg.video_path === currentSegment?.video_path) {
+        videoRef.current.currentTime = timeToSeconds(seg.start_time);
+      }
+    }
+  };
+
   const startEditing = (idx: number, seg: Segment) => {
-    pushHistory();
-    setEditingIdx(idx);
+    // Transactional Rollback if jumping while editing
+    if (editingIdx !== null && editingIdx !== idx && segmentsBackup) {
+      setSegments(segmentsBackup);
+    }
+
     const s = timeToSeconds(seg.start_time);
     const e = timeToSeconds(seg.end_time);
+
+    setSegmentsBackup(JSON.parse(JSON.stringify(segments)));
     setEditValues({
       start: s,
       end: e,
-      duration: e - s
+      duration: e - s,
+      phase: seg.phase
     });
+    setEditingIdx(idx);
+    setCurrentSegment(seg);
   };
 
   const updateSegmentValues = (idx: number, start: number, end: number) => {
@@ -646,6 +769,43 @@ export default function ProVideoDashboard() {
                   {editingIdx !== null ? (
                     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-2 duration-500 relative z-10">
                       <div className="space-y-6">
+                        {/* Phase Name Editing with Presets */}
+                        <div className="space-y-4 mb-4">
+                          <div className="space-y-1 w-full">
+                            <p className="text-[10px] text-zinc-600 font-black uppercase tracking-widest italic">Phase Name</p>
+                            <input
+                              type="text"
+                              value={editValues.phase || segments[editingIdx!].phase}
+                              onChange={(e) => {
+                                setEditValues({ ...editValues, phase: e.target.value });
+                                updatePhase(editingIdx!, e.target.value);
+                              }}
+                              className="text-3xl font-black text-white bg-transparent border-none outline-none italic w-full focus:ring-0 placeholder:opacity-20"
+                              placeholder="ENTER PHASE..."
+                            />
+                          </div>
+
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            {PRESET_PHASES.map(preset => (
+                              <button
+                                key={preset}
+                                onClick={() => {
+                                  setEditValues({ ...editValues, phase: preset });
+                                  updatePhase(editingIdx!, preset);
+                                }}
+                                className={`px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider transition-all border ${(editValues.phase || segments[editingIdx!].phase) === preset
+                                  ? "bg-white text-black border-white"
+                                  : "bg-white/5 text-zinc-500 border-white/5 hover:border-white/20 hover:text-zinc-300"
+                                  }`}
+                              >
+                                {preset}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="h-px bg-white/5 w-full" />
+
                         <div className="flex justify-between items-end px-2">
                           <div className="space-y-1">
                             <p className="text-[10px] text-zinc-600 font-black uppercase tracking-widest italic">Segment Start</p>
@@ -663,7 +823,7 @@ export default function ProVideoDashboard() {
                           step={1}
                           className="py-6"
                           onValueChange={(vals) => {
-                            setEditValues({ start: vals[0], end: vals[1], duration: vals[1] - vals[0] });
+                            setEditValues({ ...editValues, start: vals[0], end: vals[1], duration: vals[1] - vals[0] });
                             updateSegmentValues(editingIdx!, vals[0], vals[1]);
                           }}
                         />
@@ -709,8 +869,72 @@ export default function ProVideoDashboard() {
                           />
                         </div>
                       </div>
-                      <Button onClick={() => setEditingIdx(null)} className="w-full bg-blue-600 hover:bg-blue-500 text-white h-14 rounded-2xl font-black italic shadow-2xl shadow-blue-500/20 text-lg tracking-tight">
+
+                      <div className="h-px bg-white/5 w-full opacity-50" />
+
+                      {/* Operational Toolbar */}
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <Button
+                            onClick={() => insertAfter(editingIdx!)}
+                            variant="secondary"
+                            className="bg-white/5 hover:bg-emerald-500/20 border-white/10 h-16 rounded-2xl flex flex-col items-center justify-center gap-1 group transition-all"
+                          >
+                            <Plus className="w-5 h-5 text-emerald-400 group-hover:scale-110 transition-transform" />
+                            <span className="text-[10px] font-black uppercase tracking-tighter">Insert New After</span>
+                          </Button>
+                          <Button
+                            onClick={() => mergeWithNext(editingIdx!)}
+                            disabled={editingIdx === segments.length - 1}
+                            variant="secondary"
+                            className="bg-white/5 hover:bg-blue-500/20 border-white/10 h-16 rounded-2xl flex flex-col items-center justify-center gap-1 group transition-all"
+                          >
+                            <Combine className="w-5 h-5 text-blue-400 group-hover:scale-110 transition-transform" />
+                            <span className="text-[10px] font-black uppercase tracking-tighter">Merge with Next</span>
+                          </Button>
+                          <Button
+                            onClick={() => splitSegment(editingIdx!)}
+                            variant="secondary"
+                            className="bg-white/5 hover:bg-orange-500/20 border-white/10 h-16 rounded-2xl flex flex-col items-center justify-center gap-1 group transition-all"
+                          >
+                            <Scissors className="w-5 h-5 text-orange-400 group-hover:scale-110 transition-transform" />
+                            <span className="text-[10px] font-black uppercase tracking-tighter">Split Segment</span>
+                          </Button>
+                        </div>
+                        <Button
+                          onClick={() => deleteSegment(editingIdx!)}
+                          variant="destructive"
+                          className="w-full bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white border-rose-500/20 h-16 rounded-2xl flex items-center justify-center gap-4 group transition-all"
+                        >
+                          <Trash2 className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                          <span className="text-sm font-black uppercase tracking-widest">Delete This Segment</span>
+                        </Button>
+                      </div>
+
+                      <Button
+                        onClick={() => {
+                          pushHistory();
+                          setSegmentsBackup(null);
+                          setEditingIdx(null);
+                          toast.success("Changes committed");
+                        }}
+                        className="w-full bg-blue-600 hover:bg-blue-500 text-white h-14 rounded-2xl font-black italic shadow-2xl shadow-blue-500/20 text-lg tracking-tight"
+                      >
                         VALIDATE REVISION
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          if (segmentsBackup) {
+                            setSegments(segmentsBackup);
+                            setSegmentsBackup(null);
+                          }
+                          setEditingIdx(null);
+                          toast.info("Changes discarded");
+                        }}
+                        className="w-full text-zinc-500 hover:text-white h-10 font-bold uppercase text-[10px] tracking-widest mt-2"
+                      >
+                        Discard Changes
                       </Button>
                     </div>
                   ) : (
@@ -796,12 +1020,7 @@ export default function ProVideoDashboard() {
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
                             layout
-                            onClick={() => {
-                              setCurrentSegment(seg);
-                              if (videoRef.current && seg.video_path === currentSegment?.video_path) {
-                                videoRef.current.currentTime = timeToSeconds(seg.start_time);
-                              }
-                            }}
+                            onClick={() => handleSelectSegment(seg)}
                             className={`group p-6 rounded-[2.5rem] border transition-all cursor-pointer relative overflow-hidden ${isActive
                               ? "ring-2 ring-white/20 shadow-2xl scale-[1.02] z-20"
                               : "hover:scale-[1.01] hover:bg-white/5 active:scale-100"
