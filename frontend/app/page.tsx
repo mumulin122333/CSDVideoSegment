@@ -141,9 +141,41 @@ export default function ProVideoDashboard() {
   }, []);
 
   const saveToHistory = (csv: string, folder: string, name: string) => {
-    const newHistory = [{ csv, folder, name }, ...projectHistory.filter(h => h.csv !== csv || h.folder !== folder)].slice(0, 50);
-    setProjectHistory(newHistory);
-    localStorage.setItem('phasepro_history', JSON.stringify(newHistory));
+    setProjectHistory(prev => {
+      // Check if this exact CSV/Folder pair already exists
+      const existingIdx = prev.findIndex(h => h.csv === csv && h.folder === folder);
+      let newHistory = [...prev];
+
+      if (existingIdx !== -1) {
+        // If it exists, move it to the top (and update name if changed)
+        const entry = { ...newHistory[existingIdx], name };
+        newHistory.splice(existingIdx, 1);
+        newHistory = [entry, ...newHistory];
+      } else {
+        // Check for name duplicates to add suffix
+        let finalName = name;
+        let suffix = 1;
+        while (newHistory.some(h => h.name === finalName)) {
+          finalName = `${name}_${suffix}`;
+          suffix++;
+        }
+        newHistory = [{ csv, folder, name: finalName }, ...newHistory];
+      }
+
+      const limitedHistory = newHistory.slice(0, 50);
+      localStorage.setItem('phasepro_history', JSON.stringify(limitedHistory));
+      return limitedHistory;
+    });
+  };
+
+  const deleteFromHistory = (e: React.MouseEvent, csv: string, folder: string) => {
+    e.stopPropagation(); // Don't trigger loading the project
+    setProjectHistory(prev => {
+      const newHistory = prev.filter(h => !(h.csv === csv && h.folder === folder));
+      localStorage.setItem('phasepro_history', JSON.stringify(newHistory));
+      return newHistory;
+    });
+    toast.info("Project removed from history");
   };
 
   const pushHistory = useCallback(() => {
@@ -466,14 +498,23 @@ export default function ProVideoDashboard() {
                       <label className="text-[10px] uppercase text-zinc-500 font-black tracking-widest ml-1">Recent Projects</label>
                       <div className="grid grid-cols-1 gap-2 max-h-32 overflow-y-auto pr-2 custom-scrollbar">
                         {projectHistory.map((h, i) => (
-                          <button
-                            key={i}
-                            onClick={() => setImportInputs({ csv: h.csv, folder: h.folder, projectName: h.name })}
-                            className="text-left p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all border border-transparent hover:border-white/10 group"
-                          >
-                            <p className="text-xs font-black text-zinc-200 group-hover:text-white truncate">{h.name}</p>
-                            <p className="text-[9px] text-zinc-600 truncate">{h.csv}</p>
-                          </button>
+                          <div key={i} className="group relative">
+                            <button
+                              onClick={() => setImportInputs({ csv: h.csv, folder: h.folder, projectName: h.name })}
+                              className="w-full text-left p-3 rounded-lg bg-white/5 hover:bg-white/10 transition-all border border-transparent hover:border-white/10 flex flex-col pr-12"
+                            >
+                              <p className="text-xs font-black text-zinc-200 group-hover:text-white truncate">{h.name}</p>
+                              <p className="text-[9px] text-zinc-600 truncate">{h.csv}</p>
+                            </button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => deleteFromHistory(e, h.csv, h.folder)}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 text-zinc-600 hover:text-rose-500 hover:bg-rose-500/10 opacity-0 group-hover:opacity-100 transition-all rounded-lg"
+                            >
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </div>
                         ))}
                       </div>
                     </div>
