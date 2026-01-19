@@ -1,0 +1,18 @@
+[
+  {
+    "question": "Which procedural phase is shown in this image?\nPlease answer with only ONE of the following four categories:\n- Diagnosis\n- Local injection\n- Incision / Dissection\n- Hemostasis\nDo not output anything else.",
+    "field": "phase"
+  },
+  {
+    "question": "How many instruments are in the image?",
+    "field": "num_instruments"
+  },
+  {
+    "question": "Is there any visible non-clinical text overlay in the image (such as mode labels, numbers, or abbreviations in the corner)?\nIf present, transcribe it exactly. If none is visible, answer \"None\".",
+    "field": "overlay_text"
+  },
+  {
+    "question": "Based on visual inspection only, what is the appearance of the instrument sheath in this image?\nAnswer with ONLY ONE:\n- All white\n- White with blue markings\n- No instrument visible",
+    "field": "instrument_sheath"
+  }
+]
