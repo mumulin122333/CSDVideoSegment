@@ -14,9 +14,10 @@ python server.py
 
 ### 2. Start the Frontend
 From the `frontend` directory:
-1. **Install Dependencies**: `npm install`
-2. **Run Dev Server**: `npm run dev`
-3. **Open Browser**: Navigate to [http://localhost:3000](http://localhost:3000)
+1. 'cd frontend'
+2. **Install Dependencies**: `npm install`
+3. **Run Dev Server**: `npm run dev`
+4. **Open Browser**: Navigate to [http://localhost:3000](http://localhost:3000)
 
 ## Key Features
 
