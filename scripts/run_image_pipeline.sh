@@ -33,7 +33,7 @@ NEED_REPOS=(
 # Paths
 ############################################
 
-INPUT_ROOT="$ROOT_DIR/crc_lst_cfs_image"  
+INPUT_ROOT="$ROOT_DIR/data"  
 OUTPUTS_ROOT="$ROOT_DIR/.work"
 RESULTS_ROOT="$ROOT_DIR/results"
 
