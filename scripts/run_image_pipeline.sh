@@ -14,19 +14,19 @@ CONFIGS_DIR="$ROOT_DIR/configs"
 # User config
 ############################################
 
-VLM_MODEL="Mumulin/Qwen3-VL-4B-Instruct-NTUH"
+VLM_MODEL="NTUH-Polyp/Qwen3-VL-4B-Instruct-NTUH"
 VLM_TAG="$(basename "$VLM_MODEL")"
 
 ############################################
 # HF repos
 ############################################
 
-CLARITY_REPO="Mumulin/vit_mediumd_patch16_reg4_gap_384.sbb2_e200_in12k_ft_in1k-NTUH"
+CLARITY_REPO="NTUH-Polyp/vit_mediumd_patch16_reg4_gap_384.sbb2_e200_in12k_ft_in1k-NTUH"
 
 NEED_REPOS=(
-  "Mumulin/beit3_large_patch16_224.in22k_ft_in1k-NTUH"
-  "Mumulin/beit3_base_patch16_224.indomain_pt-NTUH"
-  "Mumulin/swinv2_large_window12_192-NTUH"
+  "NTUH-Polyp/beit3_large_patch16_224.in22k_ft_in1k-NTUH"
+  "NTUH-Polyp/beit3_base_patch16_224.indomain_pt-NTUH"
+  "NTUH-Polyp/swinv2_large_window12_192-NTUH"
 )
 
 ############################################
