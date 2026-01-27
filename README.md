@@ -70,10 +70,10 @@ Only the following **fine-tuned timm models** are supported and are automaticall
 
 | Purpose                | Hugging Face Repository                                               |
 | ---------------------- | --------------------------------------------------------------------- |
-| Clarity filtering      | Mumulin/vit_mediumd_patch16_reg4_gap_384.sbb2_e200_in12k_ft_in1k-NTUH |
-| Need / Not-Need voting | Mumulin/beit3_large_patch16_224.in22k_ft_in1k-NTUH                    |
-|                        | Mumulin/beit3_base_patch16_224.indomain_pt-NTUH                       |
-|                        | Mumulin/swinv2_large_window12_192-NTUH                                |
+| Clarity filtering      | NTUH-Polyp/vit_mediumd_patch16_reg4_gap_384.sbb2_e200_in12k_ft_in1k-NTUH |
+| Need / Not-Need voting | NTUH-Polyp/beit3_large_patch16_224.in22k_ft_in1k-NTUH                    |
+|                        | NTUH-Polyp/beit3_base_patch16_224.indomain_pt-NTUH                       |
+|                        | NTUH-Polyp/swinv2_large_window12_192-NTUH                                |
 
 ---
 
@@ -81,10 +81,10 @@ Only the following **fine-tuned timm models** are supported and are automaticall
 
 Users must choose **one** VLM model for phase inference:
 
-* Mumulin/Qwen3-VL-4B-Instruct-NTUH
-* Mumulin/Qwen3-VL-2B-Instruct-NTUH
-* Mumulin/InternVL3_5-4B-HF-NTUH
-* Mumulin/InternVL3_5-2B-HF-NTUH
+* NTUH-Polyp/Qwen3-VL-4B-Instruct-NTUH
+* NTUH-Polyp/Qwen3-VL-2B-Instruct-NTUH
+* NTUH-Polyp/InternVL3_5-4B-HF-NTUH
+* NTUH-Polyp/InternVL3_5-2B-HF-NTUH
 
 The selected VLM is used identically for both video and image pipelines.
 
