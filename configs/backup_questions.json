@@ -1,0 +1,30 @@
+[
+    {
+        "question": "How many polyps are in the image?",
+        "field": "num_polyps"
+    },
+    {
+        "question": "How many abnormalities are present?",
+        "field": "num_abnormalities"
+    },
+    {
+        "question": "What type of polyp or lesion is present?",
+        "field": "lesion_type"
+    },
+    {
+        "question": "What color is the abnormality?",
+        "field": "abnormality_color"
+    },
+    {
+        "question": "Where is the abnormality located?",
+        "field": "abnormality_location"
+    },
+    {
+        "question": "What instrument is being used in this image?",
+        "field": "instrument_type"
+    },
+    {
+        "question": "Are there any anatomical landmarks visible in the image?",
+        "field": "anatomical_landmarks"
+    }
+]
