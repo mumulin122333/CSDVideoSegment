@@ -1,34 +1,18 @@
 [
   {
-    "question": "How many polyps are in the image?",
-    "field": "num_polyps"
-  },
-  {
-    "question": "How many abnormalities are present?",
-    "field": "num_abnormalities"
-  },
-  {
-    "question": "What type of polyp or lesion is present?",
-    "field": "lesion_type"
-  },
-  {
-    "question": "What color is the abnormality?",
-    "field": "abnormality_color"
-  },
-  {
-    "question": "Where is the abnormality located?",
-    "field": "abnormality_location"
+    "question": "Which procedural phase is shown in this image?\nPlease answer with only ONE of the following four categories:\n- Diagnosis\n- Local injection\n- Incision / Dissection\n- Hemostasis\nDo not output anything else.",
+    "field": "phase"
   },
   {
     "question": "How many instruments are in the image?",
     "field": "num_instruments"
   },
   {
-    "question": "What instrument is being used in this image?",
-    "field": "instrument_type"
+    "question": "Is there any visible non-clinical text overlay in the image (such as mode labels, numbers, or abbreviations in the corner)?\nIf present, transcribe it exactly. If none is visible, answer \"None\".",
+    "field": "overlay_text"
   },
   {
-    "question": "Are there any anatomical landmarks visible in the image?",
-    "field": "anatomical_landmarks"
+    "question": "Based on visual inspection only, what is the appearance of the instrument sheath in this image?\nAnswer with ONLY ONE:\n- All white\n- White with blue markings\n- No instrument visible",
+    "field": "instrument_sheath"
   }
 ]
