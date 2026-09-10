@@ -1,9 +1,8 @@
 # CSDVideoSegment
 
-End-to-end case-based endoscopy phase segmentation.  This repository uses the
-MedGemma 1.5 4B **Stage 1 four-phase checkpoint** from the ESD phase
-experiment (`Diagnosis`, `Local injection`, `Incision / Dissection`, and
-`Hemostasis`).
+End-to-end case-based endoscopy phase segmentation.  This repository uses a
+MedGemma 1.5 4B **four-phase checkpoint** for (`Diagnosis`, `Local injection`,
+`Incision / Dissection`, and `Hemostasis`).
 
 ## PhasePro MAX GUI
 
@@ -43,8 +42,7 @@ clarity filtering, three-model need voting, and the final CSV schema are kept.
 
 ## Model path
 
-The canonical local phase checkpoint recorded in
-`../esd_phase_docs/run_manifest.tsv` is:
+The default local phase checkpoint is:
 
 ```text
 /mnt/t24c/mumulin/LlamaFactory/saves/campaign_nested/medgemma-1.5-4b/fold0
@@ -58,7 +56,7 @@ export CSD_MEDGEMMA_MODEL=/mnt/t24c/mumulin/LlamaFactory/saves/campaign_nested/m
 ```
 
 The public `google/medgemma-1.5-4b-it` model can be used for a smoke test, but
-it is not a replacement for this Stage 1 phase-finetuned classifier.
+it is not a replacement for this phase-finetuned classifier.
 
 ## Environment
 
