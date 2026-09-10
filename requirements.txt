@@ -1,0 +1,11 @@
+# vLLM is supplied by the CUDA Docker base image.  For Conda installs use a
+# wheel compatible with the host CUDA/PyTorch stack, then install this file.
+timm>=1.0.9
+pandas>=2.2
+Pillow>=10.0
+tqdm>=4.66
+fire>=0.7
+# MedGemma 1.5 needs the Gemma 3 processor API from this vLLM-compatible
+# pre-release; Transformers 4.57 lacks GemmaTokenizerFast.image_token_id.
+transformers==5.0.0rc0
+huggingface_hub>=0.30

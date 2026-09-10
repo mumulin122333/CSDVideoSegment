@@ -14,8 +14,9 @@ CONFIGS_DIR="$ROOT_DIR/configs"
 # User config
 ############################################
 
-VLM_MODEL="Mumulin/Qwen3-VL-4B-Instruct-NTUH"
-VLM_TAG="$(basename "$VLM_MODEL")"
+VLM_MODEL="${CSD_MEDGEMMA_MODEL:-/mnt/t24c/mumulin/LlamaFactory/saves/campaign_nested/medgemma-1.5-4b/fold0}"
+VLM_TAG="${CSD_MEDGEMMA_MODEL_TAG:-medgemma-1.5-4b-fold0}"
+PYTHON_BIN="${PYTHON_BIN:-python3}"
 
 ############################################
 # HF repos
@@ -82,7 +83,7 @@ for INPUT_DIR in "${INPUT_DIRS[@]}"; do
   # A) CLARITY
   ##########################################
 
-  python -m utils.run_frame_classifier \
+  "$PYTHON_BIN" -m utils.run_frame_classifier \
     --data-dir "$INPUT_DIR" \
     --dataset ImageFolder \
     --model "$CLARITY_REPO" \
@@ -109,7 +110,7 @@ for INPUT_DIR in "${INPUT_DIRS[@]}"; do
     NAME="$(basename "$REPO")"
     OUT_CSV="$CSV_RUN_NEED/${NAME}.csv"
 
-    python -m utils.run_frame_classifier \
+    "$PYTHON_BIN" -m utils.run_frame_classifier \
       --data-dir "$INPUT_DIR" \
       --input-list "$CLEAR_LIST" \
       --dataset ImageFolder \
@@ -129,10 +130,10 @@ for INPUT_DIR in "${INPUT_DIRS[@]}"; do
   # C) FUSE
   ##########################################
 
-  python -m utils.fuse_frame_votes \
+  "$PYTHON_BIN" -m utils.fuse_frame_votes \
     "$NEED_FUSED" 0.9 2 1 "${NEED_RUNS[@]}"
 
-  python - <<PY
+  "$PYTHON_BIN" - <<PY
 import pandas as pd
 df = pd.read_csv("$NEED_FUSED")
 df[df["final_label"] == 0]["filename"].to_csv(
@@ -144,7 +145,7 @@ PY
   # D) QA JSON
   ##########################################
 
-  python -m utils.build_vlm_dataset \
+  "$PYTHON_BIN" -m utils.build_vlm_dataset \
     --input-list "$NEED_LIST" \
     --output-json "$QA_JSON" \
     --question-schema "$CONFIGS_DIR/image_phase_questions.json"
@@ -155,7 +156,7 @@ PY
 
   VLM_JSONL="$WORK_DIR/${CASE_ID}.jsonl"
 
-  python -m utils.run_vlm_inference \
+  "$PYTHON_BIN" -m utils.run_vlm_inference \
     --model_name_or_path "$VLM_MODEL" \
     --input_json "$QA_JSON" \
     --output_jsonl "$VLM_JSONL" \
@@ -168,7 +169,7 @@ PY
   OUT_CSV="$RESULTS_ROOT/$VLM_TAG/${CASE_ID}_phase_query.csv"
   mkdir -p "$(dirname "$OUT_CSV")"
 
-  python -m utils.image_jsonl_to_phase_csv \
+  "$PYTHON_BIN" -m utils.image_jsonl_to_phase_csv \
     --jsonl "$VLM_JSONL" \
     --out-csv "$OUT_CSV" \
 

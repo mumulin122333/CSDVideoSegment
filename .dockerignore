@@ -1,0 +1,19 @@
+# The repository contains multi-terabyte frame trees and case videos.  Send
+# only source/configuration files to Docker; all data and checkpoints are
+# runtime mounts.
+*
+.*
+
+!Dockerfile
+!.dockerignore
+!README.md
+!requirements.txt
+!environment.yml
+!__init__.py
+
+!configs/
+!configs/**
+!scripts/
+!scripts/**
+!utils/
+!utils/**

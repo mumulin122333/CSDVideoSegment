@@ -1,0 +1,13 @@
+name: CSDVideoSegment
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+dependencies:
+  - python=3.11
+  - ffmpeg
+  - pip
+  - pip:
+      - -r requirements.txt
+      # Install vLLM separately with the wheel matching the machine's CUDA
+      # and PyTorch versions; see README.md.
