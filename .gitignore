@@ -1,31 +1,56 @@
-# Python
+############################
+# Results / Outputs
+############################
+results/
+outputs/
+reports/
+logs/
+
+############################
+# Videos (ALL videos, anywhere)
+############################
+*.mp4
+*.MP4
+*.avi
+*.AVI
+*.mov
+*.MOV
+*.mkv
+*.MKV
+*.webm
+*.WEBM
+
+############################
+# Raw / large data folders
+############################
+data/
+frames/
+frames_raw/
+videos/
+raw_data/
+
+############################
+# Model weights / checkpoints
+############################
+checkpoints/
+weights/
+*.pth
+*.pt
+*.ckpt
+*.safetensors
+
+############################
+# Python cache
+############################
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
 
-# Conda / venv
+############################
+# Env / misc
+############################
 .env
-.venv
-conda-env/
-
-# Runtime outputs
-.work/
-results/
-reports/
-
-# Generated data
-data/frames/
-data/**/*.png
-data/**/*.jpg
-data/**/*.MP4
-data/**/*.mp4
-data/**/*.avi
-
-# Logs
-*.log
-
-# OS
+.env.*
 .DS_Store
-Thumbs.db
-
+.shared
+.agent
+.gemini

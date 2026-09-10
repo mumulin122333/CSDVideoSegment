@@ -36,7 +36,7 @@ VIDEO_ROOT = REPO_ROOT / "data" / "videos"
 FRAME_ROOT = REPO_ROOT / "data" / "frames"
 
 FPS = 1
-LEFT_CROP_RATIO = 1 / 3
+LEFT_CROP_RATIO = 0
 
 USE_HWACCEL = os.environ.get("HWACCEL", "").lower() == "cuda"
 NUM_WORKERS = max(1, int(os.environ.get("NUM_WORKERS", min(16, cpu_count()))))
