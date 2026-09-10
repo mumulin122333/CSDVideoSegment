@@ -1,8 +1,9 @@
 # CSDVideoSegment
 
-End-to-end case-based endoscopy phase segmentation.  The default phase VLM is
-the MedGemma 1.5 4B **phase-finetuned checkpoint** used by the ESD Stage 1
-experiment; it is not the Disease3 checkpoint.
+End-to-end case-based endoscopy phase segmentation.  This repository uses the
+MedGemma 1.5 4B **Stage 1 four-phase checkpoint** from the ESD phase
+experiment (`Diagnosis`, `Local injection`, `Incision / Dissection`, and
+`Hemostasis`).
 
 ## PhasePro MAX GUI
 
@@ -56,10 +57,8 @@ repository or Docker image.  Override it when running another phase fold:
 export CSD_MEDGEMMA_MODEL=/mnt/t24c/mumulin/LlamaFactory/saves/campaign_nested/medgemma-1.5-4b/fold0
 ```
 
-Do not substitute `LlamaFactory/saves/disease3_vlm/...`: those checkpoints
-predict Disease3 labels, not the four ESD phases.  The public
-`google/medgemma-1.5-4b-it` model can be used for a smoke test, but it is not a
-replacement for a phase-finetuned classifier.
+The public `google/medgemma-1.5-4b-it` model can be used for a smoke test, but
+it is not a replacement for this Stage 1 phase-finetuned classifier.
 
 ## Environment
 
