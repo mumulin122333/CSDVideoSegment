@@ -4,6 +4,30 @@ End-to-end case-based endoscopy phase segmentation.  The default phase VLM is
 the MedGemma 1.5 4B **phase-finetuned checkpoint** used by the ESD Stage 1
 experiment; it is not the Disease3 checkpoint.
 
+## PhasePro MAX GUI
+
+The repository also includes a web-based timeline editor for reviewing and
+correcting generated phase segments.  It supports multi-video cases, project
+history, elastic timestamp editing, and CSV export.
+
+For the complete frontend setup and usage guide, see
+[Frontend & Web Editor Guide](./frontend/README.md).
+
+Quick start:
+
+```bash
+# from the repository root
+python server.py
+
+# in another terminal
+cd frontend
+npm install
+npm run dev
+```
+
+Then open `http://localhost:3000`.  The backend must be running first because
+the GUI reads video files and model-generated CSVs through the API.
+
 ## What changed
 
 The video runner is now a producer/consumer pipeline:
