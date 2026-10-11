@@ -42,17 +42,21 @@ clarity filtering, three-model need voting, and the final CSV schema are kept.
 
 ## Model path
 
-The default local phase checkpoint is:
+The default phase-finetuned checkpoint is hosted on Hugging Face:
 
 ```text
-/mnt/t24c/mumulin/LlamaFactory/saves/campaign_nested/medgemma-1.5-4b/fold0
+Mumulin/CSDVideoSegment-MedGemma15-Phase
 ```
 
-The path is a runtime mount/reference only.  No checkpoint is copied into this
-repository or Docker image.  Override it when running another phase fold:
+The model is loaded directly from Hugging Face and cached locally by the
+Hugging Face tooling; no checkpoint is bundled with this repository or Docker
+image. For private or gated access, authenticate on the host with `hf auth login`
+(or provide an appropriate `HF_TOKEN` to the container).
+
+Override the default model ID or provide a local checkpoint path if needed:
 
 ```bash
-export CSD_MEDGEMMA_MODEL=/mnt/t24c/mumulin/LlamaFactory/saves/campaign_nested/medgemma-1.5-4b/fold0
+export CSD_MEDGEMMA_MODEL=Mumulin/CSDVideoSegment-MedGemma15-Phase
 ```
 
 The public `google/medgemma-1.5-4b-it` model can be used for a smoke test, but
@@ -68,23 +72,26 @@ Build once on the machine where the workload will run:
 docker build -t csd-videosegment:medgemma15 .
 ```
 
-Run without copying videos, frames, or checkpoints into the image.  Mount the
-repository data and the checkpoint's network-zone path read-only:
+Run without copying videos, frames, or checkpoints into the image. The
+phase checkpoint is downloaded from Hugging Face on first use. The example
+mounts the host Hugging Face cache to avoid repeated downloads:
 
 ```bash
-docker run --rm --gpus all \
-  -e CSD_MEDGEMMA_MODEL=/models/medgemma15/fold0 \
-  -v "$PWD/data:/opt/CSDVideoSegment/data" \
-  -v "$PWD/results:/opt/CSDVideoSegment/results" \
-  -v "$PWD/.work:/opt/CSDVideoSegment/.work" \
-  -v /mnt/1248/open2/mumulin/endoscopy_dataset/raw_data:/mnt/1248/open2/mumulin/endoscopy_dataset/raw_data:ro \
-  -v /mnt/t24c/mumulin/LlamaFactory/saves/campaign_nested/medgemma-1.5-4b:/models/medgemma15:ro \
-  csd-videosegment:medgemma15 \
+docker run --rm --gpus all \\
+  -e CSD_MEDGEMMA_MODEL=Mumulin/CSDVideoSegment-MedGemma15-Phase \\
+  -e HF_HOME=/root/.cache/huggingface \\
+  -v "$HOME/.cache/huggingface:/root/.cache/huggingface" \\
+  -v "$PWD/data:/opt/CSDVideoSegment/data" \\
+  -v "$PWD/results:/opt/CSDVideoSegment/results" \\
+  -v "$PWD/.work:/opt/CSDVideoSegment/.work" \\
+  -v /mnt/1248/open2/mumulin/endoscopy_dataset/raw_data:/mnt/1248/open2/mumulin/endoscopy_dataset/raw_data:ro \\
+  csd-videosegment:medgemma15 \\
   --cases-file /opt/CSDVideoSegment/configs/cases.txt
 ```
 
-The checkpoint mount must be available on the host.  Do not move it between
-the `/mnt/t24c` zone and the `/mnt/1248` zone.
+If the Hugging Face repository requires authentication, ensure the mounted
+cache contains valid credentials or pass an `HF_TOKEN` securely at runtime.
+The dataset mount still needs to exist on the Docker host.
 
 ### Conda
 
@@ -137,7 +144,7 @@ Useful checks before starting a long run:
 ```bash
 python scripts/run_video_pipeline_parallel.py --dry-run
 python scripts/run_video_pipeline_parallel.py \
-  --model /path/to/phase-finetuned/medgemma-1.5-4b/fold0 \
+  --model Mumulin/CSDVideoSegment-MedGemma15-Phase \
   --dry-run
 ```
 
