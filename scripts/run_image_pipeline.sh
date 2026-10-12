@@ -14,8 +14,8 @@ CONFIGS_DIR="$ROOT_DIR/configs"
 # User config
 ############################################
 
-VLM_MODEL="${CSD_MEDGEMMA_MODEL:-/mnt/t24c/mumulin/LlamaFactory/saves/campaign_nested/medgemma-1.5-4b/fold0}"
-VLM_TAG="${CSD_MEDGEMMA_MODEL_TAG:-medgemma-1.5-4b-fold0}"
+VLM_MODEL="${CSD_MEDGEMMA_MODEL:-Mumulin/CSDVideoSegment-MedGemma15-Phase}"
+VLM_TAG="${CSD_MEDGEMMA_MODEL_TAG:-CSDVideoSegment-MedGemma15-Phase}"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 
 ############################################
