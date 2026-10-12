@@ -24,10 +24,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-DEFAULT_PHASE_MODEL = (
-    "/mnt/t24c/mumulin/LlamaFactory/saves/campaign_nested/"
-    "medgemma-1.5-4b/fold0"
-)
+DEFAULT_PHASE_MODEL = "Mumulin/CSDVideoSegment-MedGemma15-Phase"
 DEFAULT_CLARITY_REPO = (
     "Mumulin/vit_mediumd_patch16_reg4_gap_384.sbb2_e200_in12k_ft_in1k-NTUH"
 )
